@@ -10,6 +10,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -44,6 +47,19 @@ public class SecurityConfig {
         this.rsaKeyProperties = rsaKeyProperties;
     }
 
+    // bu yöntem önerilmiyor SpringSecurity team tarafından
+/*    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }*/
+
+    // best practice
+    @Bean
+    public AuthenticationManager authenticationManager(UserDetailsService userDetailsService){
+        var authProvier = new DaoAuthenticationProvider();
+        authProvier.setUserDetailsService(userDetailsService);
+        return new ProviderManager(authProvier);
+    }
 
     @Bean
     public UserDetailsService userDetailsService(){
@@ -58,14 +74,15 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/token").permitAll()
+                        .requestMatchers("/").authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt)
                 .exceptionHandling((ex) ->
                         ex.authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
                                 .accessDeniedHandler(new BearerTokenAccessDeniedHandler()))
-                .httpBasic(withDefaults())
+//                .httpBasic(withDefaults())
                 .build();
     }
 
