@@ -112,12 +112,28 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withPublicKey(rsaKeyProperties.publicKey()).build();
     }
 
-    @Bean
+/*    @Bean
     JwtEncoder jwtEncoder(){
         JWK jwk = new RSAKey.Builder(rsaKeyProperties.publicKey()).privateKey(rsaKeyProperties.privateKey()).build();
         JWKSource<SecurityContext> jwkSet = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwkSet);
+    }*/
+
+    @Bean
+    JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSet){
+        return new NimbusJwtEncoder(jwkSet);
     }
+
+    @Bean
+    public JWKSource<SecurityContext> jwkSource(){
+        JWK jwk = new RSAKey.Builder(rsaKeyProperties.publicKey())
+                .privateKey(rsaKeyProperties.privateKey())
+                .build();
+
+        return new ImmutableJWKSet<>(new JWKSet(jwk));
+    }
+
+
 
 /*    @Bean
     CorsConfigurationSource corsConfigurationSource(){
